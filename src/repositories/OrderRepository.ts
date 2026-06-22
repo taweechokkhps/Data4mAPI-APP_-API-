@@ -1,5 +1,5 @@
 import { DatabaseError } from 'pg';
-import { IOrderRepository } from '../interfaces/IOrderRepository';
+import { IOrderRepository, OrderFilters } from '../interfaces/IOrderRepository';
 import { OrderWithCustomer, CreateOrderDto } from '../models/Order';
 import { pool } from '../config/db';
 import { AppError } from '../utils/AppError';
