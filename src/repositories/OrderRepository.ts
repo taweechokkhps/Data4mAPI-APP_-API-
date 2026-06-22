@@ -22,6 +22,20 @@ const GET_ALL_ORDERS_QUERY = `
 
 const COUNT_ORDERS_QUERY = `SELECT COUNT(*) as "totalCount" FROM orders;`;
 
+const GET_ORDER_BY_ID_QUERY = `
+  SELECT 
+    o.order_id as "orderId",
+    o.customer_id as "customerId",
+    c.name as "customerName",
+    o.order_date as "orderDate",
+    o.total_amount as "totalAmount",
+    o.payment_method as "paymentMethod",
+    o.shipping_country as "shippingCountry"
+  FROM orders o
+  JOIN customers c ON o.customer_id = c.customer_id
+  WHERE o.order_id = $1;
+`;
+
 const CREATE_ORDER_QUERY = `
   WITH inserted AS (
     INSERT INTO orders (customer_id, order_date, total_amount, payment_method, shipping_country)
@@ -50,6 +64,16 @@ export class OrderRepository implements IOrderRepository {
       const total = Number(countResult.rows[0].totalCount);
       const data = result.rows.map(row => this.mapToDomain(row as unknown as OrderWithCustomer));
       return { data, total };
+    } catch (err: unknown) {
+      this.handleDbError(err);
+    }
+  }
+
+  async getById(id: number): Promise<OrderWithCustomer | null> {
+    try {
+      const result = await pool.query(GET_ORDER_BY_ID_QUERY, [id]);
+      if (result.rowCount === 0) return null;
+      return this.mapToDomain(result.rows[0] as unknown as OrderWithCustomer);
     } catch (err: unknown) {
       this.handleDbError(err);
     }

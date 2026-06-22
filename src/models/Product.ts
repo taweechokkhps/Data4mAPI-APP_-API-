@@ -1,10 +1,10 @@
 export interface Product {
   productId: number;
-  name: string;
-  description: string;
+  productName: string;
+  category: string;
+  brand: string;
   price: number;
-  stockCount: number;
-  createdAt: Date;
+  stockQuantity: number;
 }
 
 export interface PaginatedProducts {
@@ -16,8 +16,9 @@ export interface PaginatedProducts {
 }
 
 export interface CreateProductDto {
-  name: string;
-  description: string;
+  productName: string;
+  category: string;
+  brand: string;
   price: number;
-  stockCount: number;
+  stockQuantity: number;
 }

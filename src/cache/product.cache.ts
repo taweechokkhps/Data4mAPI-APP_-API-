@@ -10,15 +10,7 @@ export async function getCachedProducts(page: number, limit: number): Promise<Pa
   try {
     const cached = await redis.get(CACHE_KEY.paginatedProducts(page, limit));
     if (!cached) return null;
-    
-    const parsed = JSON.parse(cached) as PaginatedProducts;
-    if (parsed.data && Array.isArray(parsed.data)) {
-      parsed.data = parsed.data.map((p: Product) => ({
-        ...p,
-        createdAt: new Date(p.createdAt)
-      }));
-    }
-    return parsed;
+    return JSON.parse(cached) as PaginatedProducts;
   } catch (err) {
     console.error('[Redis] getCachedProducts failed:', err);
     return null;
@@ -52,8 +44,7 @@ export async function getCachedProduct(id: number): Promise<Product | null> {
   try {
     const cached = await redis.get(CACHE_KEY.productById(id));
     if (!cached) return null;
-    const parsed = JSON.parse(cached) as Product;
-    return { ...parsed, createdAt: new Date(parsed.createdAt) };
+    return JSON.parse(cached) as Product;
   } catch (err) {
     console.error('[Redis] getCachedProduct failed:', err);
     return null;

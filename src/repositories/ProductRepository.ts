@@ -7,13 +7,13 @@ import { AppError } from '../utils/AppError';
 const GET_ALL_PRODUCTS_QUERY = `
   SELECT 
     product_id as "productId",
-    name,
-    description,
+    product_name as "productName",
+    category,
+    brand,
     price,
-    stock_count as "stockCount",
-    created_at as "createdAt"
+    stock_quantity as "stockQuantity"
   FROM products
-  ORDER BY created_at DESC
+  ORDER BY product_id DESC
   LIMIT $1 OFFSET $2;
 `;
 
@@ -22,25 +22,25 @@ const COUNT_PRODUCTS_QUERY = `SELECT COUNT(*) as "totalCount" FROM products;`;
 const GET_PRODUCT_BY_ID_QUERY = `
   SELECT 
     product_id as "productId",
-    name,
-    description,
+    product_name as "productName",
+    category,
+    brand,
     price,
-    stock_count as "stockCount",
-    created_at as "createdAt"
+    stock_quantity as "stockQuantity"
   FROM products
   WHERE product_id = $1;
 `;
 
 const CREATE_PRODUCT_QUERY = `
-  INSERT INTO products (name, description, price, stock_count, created_at)
-  VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+  INSERT INTO products (product_name, category, brand, price, stock_quantity)
+  VALUES ($1, $2, $3, $4, $5)
   RETURNING 
     product_id as "productId",
-    name,
-    description,
+    product_name as "productName",
+    category,
+    brand,
     price,
-    stock_count as "stockCount",
-    created_at as "createdAt";
+    stock_quantity as "stockQuantity";
 `;
 
 export class ProductRepository implements IProductRepository {
@@ -71,10 +71,11 @@ export class ProductRepository implements IProductRepository {
   async create(data: CreateProductDto): Promise<Product> {
     try {
       const result = await pool.query(CREATE_PRODUCT_QUERY, [
-        data.name,
-        data.description,
+        data.productName,
+        data.category,
+        data.brand,
         data.price,
-        data.stockCount
+        data.stockQuantity
       ]);
       return this.mapToDomain(result.rows[0] as unknown as Product);
     } catch (err: unknown) {
@@ -85,11 +86,11 @@ export class ProductRepository implements IProductRepository {
   private mapToDomain(row: Product): Product {
     return {
       productId: row.productId,
-      name: row.name,
-      description: row.description,
+      productName: row.productName,
+      category: row.category,
+      brand: row.brand,
       price: row.price,
-      stockCount: row.stockCount,
-      createdAt: row.createdAt,
+      stockQuantity: row.stockQuantity,
     };
   }
 

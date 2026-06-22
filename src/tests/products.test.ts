@@ -24,11 +24,11 @@ describe('ProductService', () => {
     const mockProducts: Product[] = [
       {
         productId: 1,
-        name: 'Laptop',
-        description: 'A fast laptop',
+        productName: 'Laptop',
+        category: 'Electronics',
+        brand: 'Apple',
         price: 1000,
-        stockCount: 50,
-        createdAt: new Date('2023-01-01')
+        stockQuantity: 50
       }
     ];
 
@@ -60,11 +60,11 @@ describe('ProductService', () => {
   describe('getProductById', () => {
     const mockProduct: Product = {
       productId: 1,
-      name: 'Laptop',
-      description: 'A fast laptop',
+      productName: 'Laptop',
+      category: 'Electronics',
+      brand: 'Apple',
       price: 1000,
-      stockCount: 50,
-      createdAt: new Date('2023-01-01')
+      stockQuantity: 50
     };
 
     it('should return cached product', async () => {
@@ -91,9 +91,9 @@ describe('ProductService', () => {
   });
 
   describe('createProduct', () => {
-    it('should query repo and invalidate cache', async () => {
-      const mockDto = { name: 'Laptop', description: 'desc', price: 100, stockCount: 10 };
-      const mockProduct: Product = { productId: 1, ...mockDto, createdAt: new Date() };
+    it('should query repository and invalidate cache', async () => {
+      const mockDto = { productName: 'Laptop', category: 'Electronics', brand: 'Apple', price: 100, stockQuantity: 10 };
+      const mockProduct: Product = { productId: 1, ...mockDto };
 
       mockProductRepository.create.mockResolvedValue(mockProduct);
       const result = await productService.createProduct(mockDto);

@@ -6,10 +6,11 @@ import { z } from 'zod';
 import { AppError } from '../utils/AppError';
 
 const createProductSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().default(''),
+  productName: z.string().min(1),
+  category: z.string().default(''),
+  brand: z.string().default(''),
   price: z.number().positive(),
-  stockCount: z.number().int().nonnegative(),
+  stockQuantity: z.number().int().nonnegative(),
 });
 
 const productRepository = new ProductRepository();

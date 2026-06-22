@@ -3,6 +3,7 @@ import { PaginatedOrders, OrderWithCustomer } from '../models/Order';
 
 const CACHE_KEY = {
   paginatedOrders: (page: number, limit: number) => `orders:page:${page}:limit:${limit}`,
+  orderById: (id: number) => `orders:${id}`,
 } as const;
 
 export async function getCachedOrders(page: number, limit: number): Promise<PaginatedOrders | null> {
@@ -58,5 +59,25 @@ export async function invalidateAllCachedOrders(): Promise<void> {
     } while (cursor !== '0');
   } catch (err) {
     console.error('[Redis] invalidateAllCachedOrders failed:', err);
+  }
+}
+
+export async function getCachedOrder(id: number): Promise<OrderWithCustomer | null> {
+  try {
+    const cached = await redis.get(CACHE_KEY.orderById(id));
+    if (!cached) return null;
+    const parsed = JSON.parse(cached) as OrderWithCustomer;
+    return { ...parsed, orderDate: new Date(parsed.orderDate) };
+  } catch (err) {
+    console.error('[Redis] getCachedOrder failed:', err);
+    return null;
+  }
+}
+
+export async function setCachedOrder(id: number, order: OrderWithCustomer, ttlSeconds: number): Promise<void> {
+  try {
+    await redis.setex(CACHE_KEY.orderById(id), ttlSeconds, JSON.stringify(order));
+  } catch (err) {
+    console.error('[Redis] setCachedOrder failed:', err);
   }
 }

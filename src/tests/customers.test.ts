@@ -15,6 +15,8 @@ describe('CustomerService', () => {
     // Create a mock implementation of the repository interface
     mockCustomerRepository = {
       getByIdWithOrders: jest.fn(),
+      getAll: jest.fn(),
+      create: jest.fn(),
     };
     
     // Inject the mock repository into the service via constructor

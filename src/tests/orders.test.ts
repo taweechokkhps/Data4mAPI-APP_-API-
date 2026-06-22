@@ -14,6 +14,7 @@ describe('OrderService', () => {
     // Create a mock implementation of the repository interface
     mockOrderRepository = {
       getAll: jest.fn(),
+      getById: jest.fn(),
       create: jest.fn(),
     };
     

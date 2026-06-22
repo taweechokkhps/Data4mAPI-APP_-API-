@@ -25,6 +25,14 @@ export const getAllOrders = asyncHandler(async (req: Request, res: Response) => 
   res.status(200).json({ success: true, data: result });
 });
 
+export const getOrderById = asyncHandler(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) throw new AppError('Invalid ID', 400, 'INVALID_INPUT');
+
+  const order = await orderService.getOrderById(id);
+  res.status(200).json({ success: true, data: order });
+});
+
 export const createOrder = asyncHandler(async (req: Request, res: Response) => {
   const result = createOrderSchema.safeParse(req.body);
   if (!result.success) {

@@ -1,7 +1,7 @@
 import { ICustomerRepository } from '../interfaces/ICustomerRepository';
-import { CustomerWithOrders } from '../models/Customer';
+import { CustomerWithOrders, PaginatedCustomers, CreateCustomerDto, Customer } from '../models/Customer';
 import { AppError } from '../utils/AppError';
-import { getCachedCustomer, setCachedCustomer } from '../cache/customer.cache';
+import { getCachedCustomer, setCachedCustomer, getCachedCustomers, setCachedCustomers, invalidateAllCachedCustomers } from '../cache/customer.cache';
 
 const CUSTOMER_TTL_SECONDS = 1800; // 30 minutes
 
@@ -20,6 +20,32 @@ export class CustomerService {
 
     await setCachedCustomer(id, customer, CUSTOMER_TTL_SECONDS);
 
+    return customer;
+  }
+
+  async getAllCustomers(page: number, limit: number): Promise<PaginatedCustomers> {
+    const cached = await getCachedCustomers(page, limit);
+    if (cached) return cached;
+
+    const offset = (page - 1) * limit;
+    const { data, total } = await this.customerRepository.getAll(limit, offset);
+    
+    const result: PaginatedCustomers = {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
+
+    await setCachedCustomers(page, limit, result, CUSTOMER_TTL_SECONDS);
+
+    return result;
+  }
+
+  async createCustomer(data: CreateCustomerDto): Promise<Customer> {
+    const customer = await this.customerRepository.create(data);
+    await invalidateAllCachedCustomers();
     return customer;
   }
 }
