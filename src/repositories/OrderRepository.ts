@@ -4,23 +4,7 @@ import { OrderWithCustomer, CreateOrderDto } from '../models/Order';
 import { pool } from '../config/db';
 import { AppError } from '../utils/AppError';
 
-// Extract query to satisfy function length bounds (< 20 lines)
-const GET_ALL_ORDERS_QUERY = `
-  SELECT 
-    o.order_id as "orderId",
-    o.customer_id as "customerId",
-    c.name as "customerName",
-    o.order_date as "orderDate",
-    o.total_amount as "totalAmount",
-    o.payment_method as "paymentMethod",
-    o.shipping_country as "shippingCountry"
-  FROM orders o
-  JOIN customers c ON o.customer_id = c.customer_id
-  ORDER BY o.order_date DESC
-  LIMIT $1 OFFSET $2;
-`;
-
-const COUNT_ORDERS_QUERY = `SELECT COUNT(*) as "totalCount" FROM orders;`;
+// Base queries are now dynamically built to accommodate filters
 
 const GET_ORDER_BY_ID_QUERY = `
   SELECT 
@@ -55,11 +39,26 @@ const CREATE_ORDER_QUERY = `
 `;
 
 export class OrderRepository implements IOrderRepository {
-  async getAll(limit: number, offset: number): Promise<{ data: OrderWithCustomer[], total: number }> {
+  private buildFilters(filters?: OrderFilters) {
+    const clauses: string[] = [];
+    const params: any[] = [];
+    if (filters?.shippingCountry) { params.push(filters.shippingCountry); clauses.push(`o.shipping_country = $${params.length}`); }
+    if (filters?.paymentMethod) { params.push(filters.paymentMethod); clauses.push(`o.payment_method = $${params.length}`); }
+    if (filters?.customerId) { params.push(filters.customerId); clauses.push(`o.customer_id = $${params.length}`); }
+    if (filters?.customerName) { params.push(`%${filters.customerName}%`); clauses.push(`c.name ILIKE $${params.length}`); }
+    const whereSql = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
+    return { whereSql, params, pIdx: params.length + 1 };
+  }
+
+  async getAll(limit: number, offset: number, filters?: OrderFilters): Promise<{ data: OrderWithCustomer[], total: number }> {
     try {
+      const { whereSql, params, pIdx } = this.buildFilters(filters);
+      const dataQuery = `SELECT o.order_id as "orderId", o.customer_id as "customerId", c.name as "customerName", o.order_date as "orderDate", o.total_amount as "totalAmount", o.payment_method as "paymentMethod", o.shipping_country as "shippingCountry" FROM orders o JOIN customers c ON o.customer_id = c.customer_id ${whereSql} ORDER BY o.order_date DESC LIMIT $${pIdx} OFFSET $${pIdx + 1};`;
+      const countQuery = `SELECT COUNT(*) as "totalCount" FROM orders o JOIN customers c ON o.customer_id = c.customer_id ${whereSql};`;
+      
       const [result, countResult] = await Promise.all([
-        pool.query(GET_ALL_ORDERS_QUERY, [limit, offset]),
-        pool.query(COUNT_ORDERS_QUERY)
+        pool.query(dataQuery, [...params, limit, offset]),
+        pool.query(countQuery, params)
       ]);
       const total = Number(countResult.rows[0].totalCount);
       const data = result.rows.map(row => this.mapToDomain(row as unknown as OrderWithCustomer));

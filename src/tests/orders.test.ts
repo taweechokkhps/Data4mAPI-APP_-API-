@@ -51,7 +51,7 @@ describe('OrderService', () => {
       const result = await orderService.getAllOrders(1, 10);
 
       // Assert
-      expect(orderCache.getCachedOrders).toHaveBeenCalledWith(1, 10);
+      expect(orderCache.getCachedOrders).toHaveBeenCalledWith(1, 10, undefined);
       expect(mockOrderRepository.getAll).not.toHaveBeenCalled();
       expect(result).toEqual(mockPaginatedOrders);
     });
@@ -65,9 +65,9 @@ describe('OrderService', () => {
       const result = await orderService.getAllOrders(1, 10);
 
       // Assert
-      expect(orderCache.getCachedOrders).toHaveBeenCalledWith(1, 10);
-      expect(mockOrderRepository.getAll).toHaveBeenCalledWith(10, 0);
-      expect(orderCache.setCachedOrders).toHaveBeenCalledWith(1, 10, mockPaginatedOrders, 3600);
+      expect(orderCache.getCachedOrders).toHaveBeenCalledWith(1, 10, undefined);
+      expect(mockOrderRepository.getAll).toHaveBeenCalledWith(10, 0, undefined);
+      expect(orderCache.setCachedOrders).toHaveBeenCalledWith(1, 10, mockPaginatedOrders, 3600, undefined);
       expect(result).toEqual(mockPaginatedOrders);
     });
   });

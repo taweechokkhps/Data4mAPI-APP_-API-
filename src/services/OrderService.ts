@@ -1,4 +1,4 @@
-import { IOrderRepository } from '../interfaces/IOrderRepository';
+import { IOrderRepository, OrderFilters } from '../interfaces/IOrderRepository';
 import { PaginatedOrders, CreateOrderDto, OrderWithCustomer } from '../models/Order';
 import { AppError } from '../utils/AppError';
 import { getCachedOrders, setCachedOrders, invalidateAllCachedOrders, getCachedOrder, setCachedOrder } from '../cache/order.cache';
@@ -8,12 +8,12 @@ const ORDER_TTL_SECONDS = 3600; // 1 hour
 export class OrderService {
   constructor(private readonly orderRepository: IOrderRepository) {}
 
-  async getAllOrders(page: number, limit: number): Promise<PaginatedOrders> {
-    const cached = await getCachedOrders(page, limit);
+  async getAllOrders(page: number, limit: number, filters?: OrderFilters): Promise<PaginatedOrders> {
+    const cached = await getCachedOrders(page, limit, filters);
     if (cached) return cached;
 
     const offset = (page - 1) * limit;
-    const { data, total } = await this.orderRepository.getAll(limit, offset);
+    const { data, total } = await this.orderRepository.getAll(limit, offset, filters);
     
     const result: PaginatedOrders = {
       data,
@@ -23,7 +23,7 @@ export class OrderService {
       totalPages: Math.ceil(total / limit)
     };
 
-    await setCachedOrders(page, limit, result, ORDER_TTL_SECONDS);
+    await setCachedOrders(page, limit, result, ORDER_TTL_SECONDS, filters);
 
     return result;
   }

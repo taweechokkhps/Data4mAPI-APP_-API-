@@ -1,14 +1,21 @@
 import { redis } from '../config/redis';
 import { PaginatedOrders, OrderWithCustomer } from '../models/Order';
+import { OrderFilters } from '../interfaces/IOrderRepository';
+import { createHash } from 'crypto';
+
+function hashFilters(filters?: OrderFilters): string {
+  if (!filters || Object.keys(filters).length === 0) return 'all';
+  return createHash('md5').update(JSON.stringify(filters)).digest('hex');
+}
 
 const CACHE_KEY = {
-  paginatedOrders: (page: number, limit: number) => `orders:page:${page}:limit:${limit}`,
+  paginatedOrders: (page: number, limit: number, filters?: OrderFilters) => `orders:page:${page}:limit:${limit}:filters:${hashFilters(filters)}`,
   orderById: (id: number) => `orders:${id}`,
 } as const;
 
-export async function getCachedOrders(page: number, limit: number): Promise<PaginatedOrders | null> {
+export async function getCachedOrders(page: number, limit: number, filters?: OrderFilters): Promise<PaginatedOrders | null> {
   try {
-    const cached = await redis.get(CACHE_KEY.paginatedOrders(page, limit));
+    const cached = await redis.get(CACHE_KEY.paginatedOrders(page, limit, filters));
     if (!cached) return null;
     
     const parsed = JSON.parse(cached) as PaginatedOrders;
@@ -27,17 +34,17 @@ export async function getCachedOrders(page: number, limit: number): Promise<Pagi
   }
 }
 
-export async function setCachedOrders(page: number, limit: number, orders: PaginatedOrders, ttlSeconds: number): Promise<void> {
+export async function setCachedOrders(page: number, limit: number, orders: PaginatedOrders, ttlSeconds: number, filters?: OrderFilters): Promise<void> {
   try {
-    await redis.setex(CACHE_KEY.paginatedOrders(page, limit), ttlSeconds, JSON.stringify(orders));
+    await redis.setex(CACHE_KEY.paginatedOrders(page, limit, filters), ttlSeconds, JSON.stringify(orders));
   } catch (err) {
     console.error('[Redis] setCachedOrders failed:', err);
   }
 }
 
-export async function invalidateCachedOrders(page: number, limit: number): Promise<void> {
+export async function invalidateCachedOrders(page: number, limit: number, filters?: OrderFilters): Promise<void> {
   try {
-    await redis.del(CACHE_KEY.paginatedOrders(page, limit));
+    await redis.del(CACHE_KEY.paginatedOrders(page, limit, filters));
   } catch (err) {
     console.error('[Redis] invalidateCachedOrders failed:', err);
   }

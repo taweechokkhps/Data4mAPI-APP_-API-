@@ -20,7 +20,14 @@ export const getAllOrders = asyncHandler(async (req: Request, res: Response) => 
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.max(1, Number(req.query.limit) || 1000);
 
-  const result = await orderService.getAllOrders(page, limit);
+  const filters = {
+    shippingCountry: req.query.shippingCountry as string | undefined,
+    paymentMethod: req.query.paymentMethod as string | undefined,
+    customerId: req.query.customerId ? Number(req.query.customerId) : undefined,
+    customerName: req.query.customerName as string | undefined,
+  };
+
+  const result = await orderService.getAllOrders(page, limit, filters);
   
   res.status(200).json({ success: true, data: result });
 });
