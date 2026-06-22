@@ -1,6 +1,6 @@
 import { DatabaseError } from 'pg';
 import { IProductRepository } from '../interfaces/IProductRepository';
-import { Product, CreateProductDto } from '../models/Product';
+import { Product, CreateProductDto, ProductReview } from '../models/Product';
 import { pool } from '../config/db';
 import { AppError } from '../utils/AppError';
 
@@ -43,6 +43,31 @@ const CREATE_PRODUCT_QUERY = `
     stock_quantity as "stockQuantity";
 `;
 
+const GET_PRODUCT_REVIEWS_QUERY = `
+  SELECT 
+    pr.review_id as "reviewId",
+    pr.rating,
+    pr.review_text as "reviewText",
+    pr.review_date as "reviewDate",
+    p.product_id as "productId",
+    p.product_name as "productName",
+    c.customer_id as "customerId",
+    c.name as "customerName",
+    c.country as "customerCountry"
+  FROM product_reviews pr
+  JOIN products p ON pr.product_id = p.product_id
+  JOIN customers c ON pr.customer_id = c.customer_id
+  WHERE pr.product_id = $1
+  ORDER BY pr.review_date DESC
+  LIMIT $2 OFFSET $3;
+`;
+
+const COUNT_PRODUCT_REVIEWS_QUERY = `
+  SELECT COUNT(*) as "totalCount" 
+  FROM product_reviews pr
+  WHERE pr.product_id = $1;
+`;
+
 export class ProductRepository implements IProductRepository {
   async getAll(limit: number, offset: number): Promise<{ data: Product[], total: number }> {
     try {
@@ -78,6 +103,30 @@ export class ProductRepository implements IProductRepository {
         data.stockQuantity
       ]);
       return this.mapToDomain(result.rows[0] as unknown as Product);
+    } catch (err: unknown) {
+      this.handleDbError(err);
+    }
+  }
+
+  async getProductReviews(productId: number, limit: number, offset: number): Promise<{ data: ProductReview[], total: number }> {
+    try {
+      const [result, countResult] = await Promise.all([
+        pool.query(GET_PRODUCT_REVIEWS_QUERY, [productId, limit, offset]),
+        pool.query(COUNT_PRODUCT_REVIEWS_QUERY, [productId])
+      ]);
+      const total = Number(countResult.rows[0].totalCount);
+      const data = result.rows.map((row: any) => ({
+        reviewId: row.reviewId,
+        rating: row.rating,
+        reviewText: row.reviewText,
+        reviewDate: row.reviewDate,
+        productId: row.productId,
+        productName: row.productName,
+        customerId: row.customerId,
+        customerName: row.customerName,
+        customerCountry: row.customerCountry
+      }));
+      return { data, total };
     } catch (err: unknown) {
       this.handleDbError(err);
     }

@@ -22,3 +22,23 @@ export interface CreateProductDto {
   price: number;
   stockQuantity: number;
 }
+
+export interface ProductReview {
+  reviewId: number;
+  rating: number;
+  reviewText: string;
+  reviewDate: Date;
+  productId: number;
+  productName: string;
+  customerId: number;
+  customerName: string;
+  customerCountry: string;
+}
+
+export interface PaginatedProductReviews {
+  data: ProductReview[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}

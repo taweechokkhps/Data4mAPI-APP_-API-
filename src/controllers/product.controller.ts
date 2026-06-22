@@ -41,3 +41,14 @@ export const createProduct = asyncHandler(async (req: Request, res: Response) =>
   const product = await productService.createProduct(result.data);
   res.status(201).json({ success: true, data: product });
 });
+
+export const getProductReviews = asyncHandler(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) throw new AppError('Invalid ID', 400, 'INVALID_INPUT');
+
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.max(1, Number(req.query.limit) || 100);
+
+  const reviews = await productService.getProductReviews(id, page, limit);
+  res.status(200).json({ success: true, data: reviews });
+});

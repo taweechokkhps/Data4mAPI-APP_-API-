@@ -16,6 +16,7 @@ describe('ProductService', () => {
       getAll: jest.fn(),
       getById: jest.fn(),
       create: jest.fn(),
+      getProductReviews: jest.fn(),
     };
     productService = new ProductService(mockProductRepository);
   });
@@ -101,6 +102,35 @@ describe('ProductService', () => {
       expect(mockProductRepository.create).toHaveBeenCalledWith(mockDto);
       expect(productCache.invalidateAllCachedProducts).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockProduct);
+    });
+  });
+
+  describe('getProductReviews', () => {
+    const mockReviews = {
+      data: [{
+        reviewId: 1,
+        rating: 5,
+        reviewText: 'Great product!',
+        reviewDate: new Date('2024-01-01'),
+        productId: 1,
+        productName: 'Laptop',
+        customerId: 101,
+        customerName: 'Alice',
+        customerCountry: 'USA'
+      }],
+      total: 1,
+      page: 1,
+      limit: 10,
+      totalPages: 1
+    };
+
+    it('should query repository and cache result', async () => {
+      (productCache.getCachedProductReviews as jest.Mock).mockResolvedValue(null);
+      mockProductRepository.getProductReviews.mockResolvedValue({ data: mockReviews.data, total: 1 });
+      const result = await productService.getProductReviews(1, 1, 10);
+      expect(mockProductRepository.getProductReviews).toHaveBeenCalledWith(1, 10, 0);
+      expect(productCache.setCachedProductReviews).toHaveBeenCalledWith(1, 1, 10, mockReviews, 3600);
+      expect(result).toEqual(mockReviews);
     });
   });
 });

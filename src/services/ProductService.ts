@@ -1,8 +1,8 @@
 import { IProductRepository } from '../interfaces/IProductRepository';
-import { Product, PaginatedProducts, CreateProductDto } from '../models/Product';
+import { PaginatedProducts, CreateProductDto, Product, PaginatedProductReviews } from '../models/Product';
 import { 
   getCachedProducts, setCachedProducts, invalidateAllCachedProducts,
-  getCachedProduct, setCachedProduct
+  getCachedProduct, setCachedProduct, getCachedProductReviews, setCachedProductReviews
 } from '../cache/product.cache';
 import { AppError } from '../utils/AppError';
 
@@ -49,5 +49,25 @@ export class ProductService {
     const product = await this.productRepository.create(data);
     await invalidateAllCachedProducts();
     return product;
+  }
+
+  async getProductReviews(productId: number, page: number, limit: number): Promise<PaginatedProductReviews> {
+    const cached = await getCachedProductReviews(productId, page, limit);
+    if (cached) return cached;
+
+    const offset = (page - 1) * limit;
+    const { data, total } = await this.productRepository.getProductReviews(productId, limit, offset);
+
+    const result: PaginatedProductReviews = {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
+
+    await setCachedProductReviews(productId, page, limit, result, PRODUCT_TTL_SECONDS);
+
+    return result;
   }
 }
