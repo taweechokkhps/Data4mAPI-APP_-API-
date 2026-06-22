@@ -2,6 +2,7 @@ import express from 'express';
 import { errorHandler } from './middleware/errorHandler';
 import customerRoutes from './routes/customer.routes';
 import orderRoutes from './routes/order.routes';
+import productRoutes from './routes/product.routes';
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.get('/health', (req, res) => {
 // API Routes will be registered here
 app.use('/api/customers', customerRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/products', productRoutes);
 // Global error handler must be last
 app.use(errorHandler);
 
